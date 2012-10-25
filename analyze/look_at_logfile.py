@@ -12,6 +12,9 @@
 #total number of expands
 #total viewing time...
 
+#if you expanded it, they looked at it
+#
+
 ''' '''
 
 import json
@@ -133,7 +136,9 @@ total_extension_max = 0
 print "TRY OUT MAKING AN OUTPUT FILE....MAN"
 outfile = open("output/data/dend_data.js","w")
 
-for user in users_in_order:
+
+#for user in users_in_order:#start function here?
+def get_dend(user,event_type):
     total_events = 0
     sum_of_length = 0
     print "den for user",user
@@ -141,15 +146,15 @@ for user in users_in_order:
     all_dends = []
     u_children = []
     ultimate = {'name':'root','children':u_children}
-    for event in by_user[user]['incontext_expand_crumb']:
+    for event in by_user[user][event_type]:
 #        dend = json.dumps(expand_or_crumb_to_dend(event),indent = 4)
         dend = expand_or_crumb_to_dend(event)
         if dend is None:
             continue
         longness = long_dend_length(dend)
         print dend['name'],"->",longness
-        if total_extension_max < longness:
-            total_extension_max = longness
+#        if total_extension_max < longness:
+#            total_extension_max = longness
 #goal here is to follow chain of children until not found starting with source... title should always be added if not exists already in root.
         #make sure root doc exists in root
         if not dend['name'] in title_to_dend:
@@ -181,6 +186,56 @@ for user in users_in_order:
                 children = children[0]['children']
             else:
                 break
+    return ultimate
+
+#for user in users_in_order:#start function here?
+#    total_events = 0
+#    sum_of_length = 0
+#    print "den for user",user
+#    title_to_dend = {}
+#    all_dends = []
+#    u_children = []
+#    ultimate = {'name':'root','children':u_children}
+#    for event in by_user[user]['incontext_expand_crumb']:
+##        dend = json.dumps(expand_or_crumb_to_dend(event),indent = 4)
+#        dend = expand_or_crumb_to_dend(event)
+#        if dend is None:
+#            continue
+#        longness = long_dend_length(dend)
+#        print dend['name'],"->",longness
+#        if total_extension_max < longness:
+#            total_extension_max = longness
+##goal here is to follow chain of children until not found starting with source... title should always be added if not exists already in root.
+#        #make sure root doc exists in root
+#        if not dend['name'] in title_to_dend:
+#            print "Adding to root:",dend['name']
+#            start_page_dend = {'name': dend['name'], 'children':[]}
+#            title_to_dend[dend['name']] = start_page_dend
+#            u_children.append(start_page_dend)
+#        print "Attempt to print all children in order:"
+#        children = None
+#        parent = None
+#        if "children" in dend:
+#            children = dend['children']
+#            parent = dend['name']
+#        else:
+#            continue
+#        while children is not None:
+#            if "children" in children[0]:
+#                #parent, here must be indexed
+#                #if I already exists, skip adding part
+#                ##adding part
+#                if not children[0]['name'] in title_to_dend:
+#                    parent_dend = title_to_dend[parent]
+#                    print "pre existing parent",parent_dend
+#                    print children[0]['name']
+#                    child_dend = {'name': children[0]['name'], 'children': []}
+#                    title_to_dend[children[0]['name']] = child_dend
+#                    parent_dend['children'].append(child_dend)
+#                parent = children[0]['name']
+#                children = children[0]['children']
+#            else:
+#                break
         
         #print all children
         
@@ -195,7 +250,15 @@ for user in users_in_order:
 #            title_to_dend[dend['name']] = dend
 #            u_children.append(dend)
 #user_dends.push({name: "meh", value: {boop:"beep"}});
-    outfile.write("user_dends.push({name: '"+user+"', value: "+json.dumps(ultimate,indent = 4)+"});\n\n\n")
+
+for user in users_in_order:#start function here?
+    dend = get_dend(user, 'incontext_expand_crumb')
+    if len(dend['children']) > 0:
+        outfile.write("user_dends.push({name: '"+user+"-ICE', value: "+json.dumps(dend,indent = 4)+"});\n\n\n")
+for user in users_in_order:#start function here?
+    dend = get_dend(user, 'page_load_crumb')
+    if len(dend['children']) > 0:
+        outfile.write("user_dends.push({name: '"+user+"-WEB', value: "+json.dumps(dend,indent = 4)+"});\n\n\n")
         #always add, but where?
 #print by_user
 print "longest",total_extension_max
