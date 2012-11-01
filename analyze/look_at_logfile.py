@@ -17,6 +17,11 @@
 
 ''' '''
 
+#the road they took.   how much time...
+#what you have to do to figure out depth
+#the path they could take VS the path they did take
+#measuring the citation chaining...s
+
 import json
 import csv
 import sys
@@ -308,8 +313,8 @@ parse_logs()
 # GOOD STARTS
 #http://www.citeulike.org/user/anonyuser1a/library OR http://www.citeulike.org/user/anonyuser1b/library
 
-#save_dend()
-#print_simple_stats()
+save_dend()
+print_simple_stats()
 #http://www.citeulike.org/user/anonyuser7b/article/3376379  this changes multiple times I think its a forwarding link
 ###   posturl2 posts things
 def print_loads(users):
