@@ -326,4 +326,22 @@ def print_loads(users):
                 print url
             #seconds = float(tab_event['item']['duration_seconds'])
 #print_loads(["anonyuser2b"])
-print_loads(users_in_order)
+def print_pdf_loads(users):
+    for user in users:
+        print "---stats for user---",user
+        for load_event in by_user[user]['page_load_raw']:
+            url = load_event['item']['url']
+            if "pdf" in url.lower():
+                print url
+                
+def print_user_tab_events(users):
+    for user in users:
+        print "---stats for user---",user
+        for load_event in by_user[user]['tab_focus_event']:
+            url = load_event['item']['url']
+            if "pdf" in url.lower():
+                print url
+                print load_event
+
+#print_loads(users_in_order)
+print_user_tab_events(users_in_order)
