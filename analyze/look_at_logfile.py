@@ -25,6 +25,7 @@
 import json
 import csv
 import sys
+import time,datetime
 sys.path.append('citeulike_collection')
 
 import download_and_save_users
@@ -42,7 +43,17 @@ seenit = {}#make sure unique by hash
 users_in_order = []
 by_user = {}#each user has three kinds of lists...
 types_of_events = ['page_load_crumb','tab_focus_event', 'page_load_raw','incontext_expand_crumb']
-throw_out_partials = ['http://achilles.cse.tamu.edu/study/webbrowser.mov','docs.google.com','http://achilles.cse.tamu.edu/study/ice.mov','http://achilles.cse.tamu.edu/study/intro.mov','http://achilles.cse.tamu.edu/study/webbrowser.mov','chrome-extension']
+#throw_out_partials = ['http://achilles.cse.tamu.edu/study/webbrowser.mov','docs.google.com','http://achilles.cse.tamu.edu/study/ice.mov','http://achilles.cse.tamu.edu/study/intro.mov','http://achilles.cse.tamu.edu/study/webbrowser.mov','chrome-extension']
+
+
+
+#throw_out_partials = ['anonyuser1a','anonyuser1b','set1.html','set2.html']
+start_web = ['user/anonyuser1a','user/anonyuser1b']
+start_ice= ['set1.html','set2.html']
+test_pages = ['http://dl.acm.org/citation.cfm?id=1118704','ICE.html']#two states here....
+ends = ['docs.google.com', 'chrome-extension']
+
+#set1  anonyuser1a
 
 #below pasted from google doc.
 places = '''anonyuser2a    ice + pagerank
@@ -65,24 +76,24 @@ anonyuser8b    ice + pagerank
 anonyuser9b    web + query log
 anonyuser10b    ice + query log'''
 
-#throw out 9... bleh
-places = '''anonyuser2a    ice + pagerank
-anonyuser3a    web + pagerank
-anonyuser4a    ice + query log
-anonyuser5a    web + query log
-anonyuser6a    ice + pagerank
-anonyuser7a    web + pagerank
-anonyuser8a    web + query log
-anonyuser10a    web + pagerank
-anonyuser1b    ice + pagerank
-anonyuser2b    web + query log
-anonyuser3b    ice + query log
-anonyuser4b    web + pagerank
-anonyuser5b    ice + pagerank
-anonyuser6b    web + query log
-anonyuser7b    ice + query log
-anonyuser8b    ice + pagerank
-anonyuser10b    ice + query log'''
+##throw out 9... bleh
+#places = '''anonyuser2a    ice + pagerank
+#anonyuser3a    web + pagerank
+#anonyuser4a    ice + query log
+#anonyuser5a    web + query log
+#anonyuser6a    ice + pagerank
+#anonyuser7a    web + pagerank
+#anonyuser8a    web + query log
+#anonyuser10a    web + pagerank
+#anonyuser1b    ice + pagerank
+#anonyuser2b    web + query log
+#anonyuser3b    ice + query log
+#anonyuser4b    web + pagerank
+#anonyuser5b    ice + pagerank
+#anonyuser6b    web + query log
+#anonyuser7b    ice + query log
+#anonyuser8b    ice + pagerank
+#anonyuser10b    ice + query log'''
 
 any_user = {}
 web_users = []
@@ -142,6 +153,10 @@ user_type_tag = {}
 
 ##TBD add cleaning function
 def parse_logs():
+    running_count = 0
+    new_user = False
+    start = None
+    end = None
     for line in input_lines:
         line = line.strip()
         #print line
@@ -164,13 +179,49 @@ def parse_logs():
                 event_holder[event] = []
             by_user[user] = event_holder
             users_in_order.append(user)
+            new_user = True
+            start = None
+            end = None
         skip = False
+        running_count += 1
+        
+        stamp = datetime.datetime.fromtimestamp(float( ob['timestamp'] ) * .001)
+        #print stamp
         if "url" in ob['item']:
-            for partial in throw_out_partials:
-                if partial in ob['item']['url']:
-                    skip = True
-        if skip:
-            continue
+            item = ob['item']
+            if ob['type'] == 'page_load_raw':
+                url = item['url']
+                partials = None
+                if user in ice_users:
+                    partials = start_ice
+                if user in web_users:
+                    partials = start_web
+                #find starts
+                for partial in partials:
+                    if partial in url:
+                        if start is None:
+                            start = stamp#how to do end?
+                            print stamp,"START",user,url
+                if start is not None and end is None:
+                    for partial in ends:
+                        if partial in url:
+                            print stamp,"END",user,url
+                            end = stamp
+                            print "duration is",(end - start).seconds/60.0,"minutes"
+                            if (end - start).seconds < 120:
+                                print ""#end = None
+                        
+                            
+#        if "url" in ob['item']:
+#            for partial in throw_out_partials:
+#                if partial in ob['item']['url']:
+#                    skip = True                    
+#                    #print "Skipping between ------>      ",user,partial,running_count
+#                    if running_count > 0:
+#                        print "Found!!!! between ------>      ",user,partial,any_user[user]['web'],running_count, "                   ... "+ob['item']['url']
+#                    running_count = 0
+#        if skip:
+#            continue
         by_user[user][ob['type']].append(ob)
 
 def print_simple_stats():
@@ -313,8 +364,10 @@ parse_logs()
 # GOOD STARTS
 #http://www.citeulike.org/user/anonyuser1a/library OR http://www.citeulike.org/user/anonyuser1b/library
 
-save_dend()
-print_simple_stats()
+##save_dend()
+##print_simple_stats()
+
+
 #http://www.citeulike.org/user/anonyuser7b/article/3376379  this changes multiple times I think its a forwarding link
 ###   posturl2 posts things
 def print_loads(users):
@@ -337,11 +390,15 @@ def print_pdf_loads(users):
 def print_user_tab_events(users):
     for user in users:
         print "---stats for user---",user
-        for load_event in by_user[user]['tab_focus_event']:
-            url = load_event['item']['url']
+        for event in by_user[user]['tab_focus_event']:
+            url = event['item']['url']
+            item = event['item']
             if "pdf" in url.lower():
-                print url
-                print load_event
+                print item['duration_seconds'],url
+                #print load_event
+
+def get_study_endpoints():
+    print "testing for input"
 
 #print_loads(users_in_order)
-print_user_tab_events(users_in_order)
+#print_user_tab_events(users_in_order)
