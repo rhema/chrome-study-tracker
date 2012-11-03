@@ -22,6 +22,8 @@
 #the path they could take VS the path they did take
 #measuring the citation chaining...s
 
+#now that I have a couple the duration times, I need to add a couple of passes....
+
 import json
 import csv
 import sys
@@ -35,6 +37,7 @@ csv_header = ['user','dataset','method','collected']
 
 #input_file = open("browser-log.txt")
 input_file = open("aggregatelog.txt")
+#input_file = open("aggregatelog7a.txt")
 #input_file = open("nony10.txt")
 input_lines = input_file.readlines()
 print "Input has",str(len(input_lines)),"entries"
@@ -42,7 +45,8 @@ print "Input has",str(len(input_lines)),"entries"
 seenit = {}#make sure unique by hash
 users_in_order = []
 by_user = {}#each user has three kinds of lists...
-types_of_events = ['page_load_crumb','tab_focus_event', 'page_load_raw','incontext_expand_crumb']
+log_events = ['page_load_crumb','tab_focus_event', 'page_load_raw','incontext_expand_crumb']
+analysis_datas = ['start','end','duration_minutes']
 #throw_out_partials = ['http://achilles.cse.tamu.edu/study/webbrowser.mov','docs.google.com','http://achilles.cse.tamu.edu/study/ice.mov','http://achilles.cse.tamu.edu/study/intro.mov','http://achilles.cse.tamu.edu/study/webbrowser.mov','chrome-extension']
 
 
@@ -51,7 +55,7 @@ types_of_events = ['page_load_crumb','tab_focus_event', 'page_load_raw','inconte
 start_web = ['user/anonyuser1a','user/anonyuser1b']
 start_ice= ['set1.html','set2.html']
 test_pages = ['http://dl.acm.org/citation.cfm?id=1118704','ICE.html']#two states here....
-ends = ['docs.google.com', 'chrome-extension']
+ends = ['docs.google.com', 'chrome-extension','chrome://chrome/settings/']
 
 #set1  anonyuser1a
 
@@ -151,12 +155,26 @@ print web_users,ice_users,rank_users,log_users
 
 user_type_tag = {}
 
+def timestamp_to_datetime(timestamp):
+    return datetime.datetime.fromtimestamp(float( timestamp ) * .001)
+
+
+##The structure is wrong here somehow...
+##
+##
+##
+
 ##TBD add cleaning function
 def parse_logs():
     running_count = 0
     new_user = False
     start = None
+    start_backup = None#10a case
     end = None
+    seen_mov = False
+    old_user = None
+    first_time = None
+    last_time = None
     for line in input_lines:
         line = line.strip()
         #print line
@@ -174,40 +192,74 @@ def parse_logs():
             continue
         seenit[hash] = 1
         if not user in by_user:
+            #check for old...
+            print user,"<- now   -> then",old_user
+            if old_user is not None and old_user != user:
+                if ((not 'start' in by_user[old_user]) or (not 'end' in by_user[old_user])):
+                    if start is None:
+                        start = first_time
+                        by_user[old_user]['start'] = first_time
+                        print "Hard restart for start...",old_user
+                    if end is None:
+    #                    last...a.a.a.a.aa
+                        by_user[old_user]['end'] = last_time
+                        print "Hard restart for end",old_user
+                    by_user[old_user]['duration_minutes'] = (by_user[old_user]['end'] - by_user[old_user]['start']).seconds/60.0
+                    print "Hard restart for duration...",old_user
+                        
+                else:
+                    print "Got it all..."
             event_holder = {}
-            for event in types_of_events:
+            for event in log_events:
                 event_holder[event] = []
             by_user[user] = event_holder
             users_in_order.append(user)
             new_user = True
             start = None
             end = None
+            seen_mov = False
+            first_time = timestamp_to_datetime(ob['timestamp'])
         skip = False
         running_count += 1
         
-        stamp = datetime.datetime.fromtimestamp(float( ob['timestamp'] ) * .001)
+        stamp = timestamp_to_datetime(ob['timestamp'])
+        last_time = stamp
         #print stamp
+        old_user = user
         if "url" in ob['item']:
             item = ob['item']
-            if ob['type'] == 'page_load_raw':
+            if ob['type'] == 'page_load_raw':#'tab_focus_event':#'page_load_raw':
                 url = item['url']
+#                print "tab event",url
                 partials = None
                 if user in ice_users:
                     partials = start_ice
                 if user in web_users:
                     partials = start_web
                 #find starts
+                #start goes away if we see test pages first...
+                for partial in test_pages:
+                    if partial in url:
+                        print "Start is none again because:",url
+                        start = None
+                        start_backup = start
                 for partial in partials:
                     if partial in url:
                         if start is None:
                             start = stamp#how to do end?
                             print stamp,"START",user,url
+                            by_user[user]['start'] = start
                 if start is not None and end is None:
                     for partial in ends:
                         if partial in url:
+                            if start is None:
+                                start = start_backup
                             print stamp,"END",user,url
                             end = stamp
                             print "duration is",(end - start).seconds/60.0,"minutes"
+                            by_user[user]['start'] = start
+                            by_user[user]['end'] = end
+                            by_user[user]['duration_minutes'] = (end - start).seconds/60.0
                             if (end - start).seconds < 120:
                                 print ""#end = None
                         
@@ -224,21 +276,47 @@ def parse_logs():
 #            continue
         by_user[user][ob['type']].append(ob)
 
+def clean_logs_by_duration():
+    #print "OK!!!"
+    for user in by_user:
+        #print user,by_user[user]['duration_minutes']
+        print "cleaning by duration for",user
+        start = by_user[user]['start']
+        end = by_user[user]['end']
+#        print "=========== getting rid of ============="
+#        print start,end
+        for event_type in log_events:
+            for event in by_user[user][event_type]:
+                by_user[user][event_type] = [x for x in by_user[user][event_type] if timestamp_to_datetime(x['timestamp']) > start and timestamp_to_datetime(x['timestamp']) < end ]
+                #by_user[user][event_type] = []
+#                event_time = timestamp_to_datetime(event['timestamp'])
+#                extra = ""
+#                if event['type'] in ['page_load_raw','tab_focus_event']:
+#                    extra = event['item']['url']
+#                if event_time <= start or event_time >= end:
+#                    #print "delete",event
+#                    by_user[user][event_type].remove(event)
+#                    print event_time,"NIX",user,event_type,extra
+#                else:
+#                    #print "don't delete",event
+#                    blah = 0
+#                    print event_time,"KEEP",user,event_type,extra
+
 def print_simple_stats():
     for user in users_in_order:
         print "---stats for user---",user
-        for event in types_of_events:
-            print str(len(by_user[user][event])),event,"events"
+        for event in log_events:
+            print "%4d" % len(by_user[user][event]),event,"events",
         total_tab_time = 0
         for tab_event in by_user[user]['tab_focus_event']:
             seconds = float(tab_event['item']['duration_seconds'])
     #        if seconds > 30:
     #            print tab_event['item']
-    #        print tab_event['item']['url']
+#            print tab_event['item']['url'],seconds
     #        if "acm" in by_user[user]['item']['url']:
     #            print tab_event
             total_tab_time += seconds
-        print "Total tab time:",total_tab_time/60.0
+        print "Total tab time:",total_tab_time/60.0,by_user[user]['duration_minutes']
 
 def expand_or_crumb_to_dend(item):
     item = item['item']
@@ -355,17 +433,7 @@ def save_dend():
         if len(dend['children']) > 0:
             outfile.write("user_dends.push({name: '"+user+"-WEB', value: "+json.dumps(dend,indent = 4)+"});\n\n\n")
             #always add, but where?
-#print by_user
-#print "longest",total_extension_max
 
-
-parse_logs()
-
-# GOOD STARTS
-#http://www.citeulike.org/user/anonyuser1a/library OR http://www.citeulike.org/user/anonyuser1b/library
-
-##save_dend()
-##print_simple_stats()
 
 
 #http://www.citeulike.org/user/anonyuser7b/article/3376379  this changes multiple times I think its a forwarding link
@@ -390,15 +458,36 @@ def print_pdf_loads(users):
 def print_user_tab_events(users):
     for user in users:
         print "---stats for user---",user
+        print by_user
         for event in by_user[user]['tab_focus_event']:
             url = event['item']['url']
             item = event['item']
-            if "pdf" in url.lower():
-                print item['duration_seconds'],url
+#            if "pdf" in url.lower():
+            print timestamp_to_datetime(event['timestamp']),item['duration_seconds'],url
                 #print load_event
 
 def get_study_endpoints():
-    print "testing for input"
+    print "testing for inpur"
 
-#print_loads(users_in_order)
-#print_user_tab_events(users_in_order)
+#print by_user
+#print "longest",total_extension_max
+
+
+parse_logs()
+clean_logs_by_duration()
+print_simple_stats()
+
+#print "......"
+#print "......"
+#print "......"
+#print "......"
+#print_simple_stats()
+
+# GOOD STARTS
+#http://www.citeulike.org/user/anonyuser1a/library OR http://www.citeulike.org/user/anonyuser1b/library
+
+##save_dend()
+##print_simple_stats()
+
+
+
