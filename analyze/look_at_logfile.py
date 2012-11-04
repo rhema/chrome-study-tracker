@@ -33,7 +33,11 @@ sys.path.append('citeulike_collection')
 import download_and_save_users
 
 csv_output_file = "file.csv"
-csv_header = ['user','dataset','method','collected']
+csv_header = []
+collection_metrics = ['user','dataset','method','collected','experiment_order']
+metrics = ['pdf_time','paper_page_time','transitional_page_time']
+csv_header = collection_metrics+metrics
+
 
 #input_file = open("browser-log.txt")
 input_file = open("aggregatelog.txt")
@@ -130,12 +134,51 @@ for line in places.split('\n'):
 
 
 print "blah"
+print "what is anyuser?",any_user
 csvfile = open('file.csv','wb')
 csv_out = csv.writer(csvfile)
 csv_out.writerow(csv_header)
 
 download_and_save_users.download_cite_u_like_user_data()
 
+def init_by_user():
+    for user in any_user:
+        by_user[user] = {}
+
+def compute_collection_metrics():
+    for user in any_user:
+        stat = download_and_save_users.citulike_user_object_to_stats(json.load(open('citeulike_collection/users/'+user+'.json')))
+        out_row = [user]#[user[:-1]]
+        for set in ['rank','log','web','ice']:
+            if any_user[user][set]:
+                out_row.append(set)
+        out_row.append(stat['collected'])
+        out_row.append(user[len(user)-1])
+        #out_row.append()
+        print "out row",out_row
+        for i in range(len(collection_metrics)):
+            by_user[user][collection_metrics[i]] = out_row[i]
+#        print by_user
+
+def save_by_user_metrics(filename):
+    print "csv header is",csv_header
+    csvfile = open(filename,'wb')
+    csv_out = csv.writer(csvfile)
+    csv_out.writerow(csv_header)
+    for user in any_user:
+        out_row = []
+        for col in csv_header:
+            if col in by_user[user]:
+                out_row += [by_user[user][col]]
+            else:
+                out_row += [""]
+        csv_out.writerow(out_row)
+    csvfile.close()
+
+init_by_user()
+compute_collection_metrics()
+save_by_user_metrics("first.csv")
+exit(0)
 #['user','dataset','method','collected']
 def generate_collected_csv():
     for user in any_user:
@@ -149,8 +192,8 @@ def generate_collected_csv():
         out_row.append(stat['collected'])
         csv_out.writerow(out_row)
 
-generate_collected_csv()
-print web_users,ice_users,rank_users,log_users
+#generate_collected_csv()
+#print web_users,ice_users,rank_users,log_users
 #exit()
 
 user_type_tag = {}
@@ -476,6 +519,7 @@ def get_study_endpoints():
 parse_logs()
 clean_logs_by_duration()
 print_simple_stats()
+generate_collected_csv()
 
 #print "......"
 #print "......"
