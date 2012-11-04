@@ -28,6 +28,7 @@ import json
 import csv
 import sys
 import time,datetime
+import re
 sys.path.append('citeulike_collection')
 
 import download_and_save_users
@@ -35,9 +36,14 @@ import download_and_save_users
 csv_output_file = "file.csv"
 csv_header = []
 collection_metrics = ['user','dataset','method','collected','experiment_order']
-metrics = ['pdf_time','paper_page_time','transitional_page_time']
+metrics = ['total_time','pdf_time','paper_page_time','start_page_time','transitional_page_time']
 csv_header = collection_metrics+metrics
 
+paper_regexes = [re.compile("http://portal.acm.org/citation.cfm.*"),
+                 re.compile("http://dl.acm.org/citation.cfm.*"),
+                 re.compile("http://citeseerx.ist.psu.edu/viewdoc/summary.*"),
+                 re.compile("http://ieeexplore.ieee.org/xpl/articleDetails.jsp.*"),
+                 re.compile("http://ieeexplore.ieee.org:80/xpl/articleDetails.jsp.*")]
 
 #input_file = open("browser-log.txt")
 input_file = open("aggregatelog.txt")
@@ -58,6 +64,7 @@ analysis_datas = ['start','end','duration_minutes']
 #throw_out_partials = ['anonyuser1a','anonyuser1b','set1.html','set2.html']
 start_web = ['user/anonyuser1a','user/anonyuser1b']
 start_ice= ['set1.html','set2.html']
+start_any = start_web + start_ice
 test_pages = ['http://dl.acm.org/citation.cfm?id=1118704','ICE.html']#two states here....
 ends = ['docs.google.com', 'chrome-extension','chrome://chrome/settings/']
 
@@ -141,9 +148,12 @@ csv_out.writerow(csv_header)
 
 download_and_save_users.download_cite_u_like_user_data()
 
-def init_by_user():
+def init_metrics_by_user():#add init_metrics_by_user() instead?
     for user in any_user:
-        by_user[user] = {}
+        if not user in by_user:
+            by_user[user] = {}
+        for item in csv_header:
+            by_user[user][item]=None
 
 def compute_collection_metrics():
     for user in any_user:
@@ -175,10 +185,7 @@ def save_by_user_metrics(filename):
         csv_out.writerow(out_row)
     csvfile.close()
 
-init_by_user()
-compute_collection_metrics()
-save_by_user_metrics("first.csv")
-exit(0)
+
 #['user','dataset','method','collected']
 def generate_collected_csv():
     for user in any_user:
@@ -509,17 +516,70 @@ def print_user_tab_events(users):
             print timestamp_to_datetime(event['timestamp']),item['duration_seconds'],url
                 #print load_event
 
-def get_study_endpoints():
-    print "testing for inpur"
+#btzt...
 
+def is_pdf(url):
+    return ".pdf" in url.lower()
+
+def is_url_paper(url):
+    for reg in paper_regexes:
+        if reg.match(url) is not None:
+#            print reg.pattern,"matches",url
+            return True
+#        else:
+#            print reg.pattern,"not match",url
+    return False
+
+def is_start_page(url):
+    for partial in start_any:
+        if partial in url:
+            return True
+    return False
+
+def total_tab_event_time(tab_events):
+    total = 0.0
+    for event in tab_events:
+            total += event['item']['duration_seconds']
+    return total/60.0
+
+def compute_tab_stats():#metrics = ['total_time','pdf_time','paper_page_time', 'start_page','transitional_page_time']
+    for user in users_in_order:
+        print "---stats for user---",user
+        by_user[user]['total_time'] = by_user[user]['duration_minutes']
+        tab_events = by_user[user]['tab_focus_event']
+        pdf_tab_events = [x for x in tab_events if is_pdf( x['item']['url']) ]#(".pdf" in x['item']['url']) ]
+        by_user[user]['pdf_time'] = total_tab_event_time(pdf_tab_events)
+
+        paper_page_tab_events = [x for x in tab_events if  is_url_paper(x['item']['url']) ]#(".pdf" in x['item']['url']) ]
+        by_user[user]['paper_page_time'] =  total_tab_event_time(paper_page_tab_events)
+        
+        start_page_tab_events = [x for x in tab_events if  is_start_page(x['item']['url']) ]
+        by_user[user]['start_page_time'] =  total_tab_event_time(start_page_tab_events)
+        
+        for event in tab_events:
+            inlcuded = False
+            for f in [is_pdf,is_url_paper,is_start_page]:
+                if f(event['item']['url']):
+                    inlcuded = True
+                    break
+            if not inlcuded:
+                print event['item']['url']
+
+        
 #print by_user
 #print "longest",total_extension_max
 
-
+#init_by_user()
+#
 parse_logs()
 clean_logs_by_duration()
-print_simple_stats()
-generate_collected_csv()
+init_metrics_by_user()
+compute_collection_metrics()
+compute_tab_stats()
+save_by_user_metrics("first.csv")
+#print_simple_stats()
+#generate_collected_csv()
+
 
 #print "......"
 #print "......"
