@@ -29,6 +29,8 @@ import csv
 import sys
 import time,datetime
 import re
+import numpy
+
 sys.path.append('citeulike_collection')
 
 import download_and_save_users
@@ -36,7 +38,9 @@ import download_and_save_users
 csv_output_file = "file.csv"
 csv_header = []
 collection_metrics = ['user','dataset','method','collected','experiment_order']
-metrics = ['total_time','pdf_time','paper_page_time','start_page_time','collecting_time','transitional_page_time']
+metrics = ['total_time','pdf_time','paper_page_time','start_page_time','collecting_time','transitional_page_time','depth_mean','depth_max','page_impression']
+#longnesses...
+
 csv_header = collection_metrics+metrics
 
 
@@ -65,7 +69,8 @@ paper_regexes = [re.compile("http://portal.acm.org/citation.cfm.*"),
 
 
 #input_file = open("browser-log.txt")
-input_file = open("aggregatelog.txt")
+#input_file = open("aggregatelog.txt")
+input_file = open("all_together.json")
 #input_file = open("aggregatelog7a.txt")
 #input_file = open("nony10.txt")
 input_lines = input_file.readlines()
@@ -107,6 +112,35 @@ anonyuser7b    ice + query log
 anonyuser8b    ice + pagerank
 anonyuser9b    web + query log
 anonyuser10b    ice + query log'''
+
+places = '''anonyuser2a    ice + pagerank
+anonyuser3a    web + pagerank
+anonyuser4a    ice + query log
+anonyuser5a    web + query log
+anonyuser6a    ice + pagerank
+anonyuser7a    web + pagerank
+anonyuser8a    web + query log
+anonyuser9a    ice + pagerank
+anonyuser10a    web + pagerank
+anonyuser11a    ice + query log
+anonyuser12a    web + query log
+anonyuser13a    ice + pagerank
+anonyuser14a    ice + query log
+anonyuser15a    web + pagerank
+anonyuser2b    web + query log
+anonyuser3b    ice + query log
+anonyuser4b    web + pagerank
+anonyuser5b    ice + pagerank
+anonyuser6b    web + query log
+anonyuser7b    ice + query log
+anonyuser8b    ice + pagerank
+anonyuser9b    web + query log
+anonyuser10b    ice + query log
+anonyuser11b    web + pagerank
+anonyuser12b    ice + pagerank
+anonyuser13b    web + query log
+anonyuser14b    web + pagerank
+anonyuser15b    ice + query log'''
 
 ##throw out 9... bleh
 #places = '''anonyuser2a    ice + pagerank
@@ -174,6 +208,7 @@ def init_metrics_by_user():#add init_metrics_by_user() instead?
 
 def compute_collection_metrics():
     for user in any_user:
+        print "Computing collected for...",user
         stat = download_and_save_users.citulike_user_object_to_stats(json.load(open('citeulike_collection/users/'+user+'.json')))
         out_row = [user]#[user[:-1]]
         for set in ['rank','log','web','ice']:
@@ -398,7 +433,7 @@ def expand_or_crumb_to_dend(item):
         current_children = None
     if len(item['parents']) == 0:
 #        print "breaking"
-        return {'name':source}
+        return {'name':source, 'url':item['source']['url']}
     parents = item['parents']
 #    print "Dos parents",parents,len(parents)
     if parents > 1:
@@ -407,15 +442,33 @@ def expand_or_crumb_to_dend(item):
         if current_children is None:
             current_children = []
             dend['name'] = parent['title']
+            dend['url'] = parent['url']
             dend['children'] = current_children
         else:
             new_children = []
-            current_children.append({'name':parent['title'],'children':new_children})
+            current_children.append({'name':parent['title'],'url':parent['url'],'children':new_children})
             current_children = new_children
-    current_children.append({'name':source})        
+    current_children.append({'name':source,'url':item['source']['url']})     
     #for child in item['item']['parents']:#maybe need to reverse....
     #    print parent
     return dend
+
+
+def long_dend_papers(dend):
+    length = 1
+    children = None
+    if "children" in dend:
+        children = dend['children']
+    else:
+        return length
+    while children is not None:
+        length += 1
+        
+        if "children" in children[0] and is_url_paper(children[0]['url']):
+            children = children[0]['children']
+        else:
+            break
+    return length
 
 def long_dend_length(dend):
     length = 1
@@ -450,21 +503,23 @@ def get_dend(user,event_type):
     ultimate = {'name':'root','children':u_children}
     for event in by_user[user][event_type]:
 #        dend = json.dumps(expand_or_crumb_to_dend(event),indent = 4)
+        url = event['item']['source']['url']
+        if not is_url_paper(url):
+            continue
         dend = expand_or_crumb_to_dend(event)
         if dend is None:
             continue
-        longness = long_dend_length(dend)
-#        print dend['name'],"->",longness
-#        if total_extension_max < longness:
-#            total_extension_max = longness
-#goal here is to follow chain of children until not found starting with source... title should always be added if not exists already in root.
-        #make sure root doc exists in root
+        longness = long_dend_papers(dend)
+        if not "depths" in by_user[user]:
+            by_user[user]['depths'] = []
+        by_user[user]['depths'] += [longness]
+        if longness > 15:
+            print event
+        
         if not dend['name'] in title_to_dend:
-#            print "Adding to root:",dend['name']
             start_page_dend = {'name': dend['name'], 'children':[]}
             title_to_dend[dend['name']] = start_page_dend
             u_children.append(start_page_dend)
-#        print "Attempt to print all children in order:"
         children = None
         parent = None
         if "children" in dend:
@@ -479,7 +534,7 @@ def get_dend(user,event_type):
                 ##adding part
                 if not children[0]['name'] in title_to_dend:
                     parent_dend = title_to_dend[parent]
-#                    print "pre existing parent",parent_dend
+#                    print "pre existing parent",parent_densd
 #                    print children[0]['name']
                     child_dend = {'name': children[0]['name'], 'children': []}
                     title_to_dend[children[0]['name']] = child_dend
@@ -600,7 +655,14 @@ def compute_tab_stats():#metrics = ['total_time','pdf_time','paper_page_time', '
             if not inlcuded:
                 print event['item']['url']
 
-        
+def add_depth():
+    for user in any_user:
+        print user,"depths"
+        if "depths" in by_user[user]:
+            by_user[user]['depth_mean'] = numpy.mean(by_user[user]['depths'])
+            by_user[user]['depth_max'] = numpy.max(by_user[user]['depths'])
+            by_user[user]['page_impression'] = len(by_user[user]['depths'])
+            print numpy.median(by_user[user]['depths']), numpy.mean(by_user[user]['depths']),by_user[user]['depths']
 #print by_user
 #print "longest",total_extension_max
 
@@ -611,6 +673,8 @@ clean_logs_by_duration()
 init_metrics_by_user()
 compute_collection_metrics()
 compute_tab_stats()
+save_dend()
+add_depth()
 save_by_user_metrics("first.csv")
 #print_simple_stats()
 #generate_collected_csv()

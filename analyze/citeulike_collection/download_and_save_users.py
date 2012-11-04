@@ -10,7 +10,10 @@ def citulike_user_object_to_stats(cite_u):
 #    print json.dumps(cite_u,indent=2)
 #    print str(len(cite_u['citeulike_user']['collected_papers']['citeulike_paper']))
 #    print cite_u['citeulike_user']['name']
-    return {'name': cite_u['citeulike_user']['name'], 'collected':len(cite_u['citeulike_user']['collected_papers']['citeulike_paper'])}
+    number_collected = 0
+    if "collected_papers" in cite_u['citeulike_user']:
+        number_collected = len(cite_u['citeulike_user']['collected_papers']['citeulike_paper'])
+    return {'name': cite_u['citeulike_user']['name'], 'collected':number_collected}
 
 def download_citeulike(user,path):
     outfile = open(path,"w")
@@ -25,7 +28,7 @@ def download_citeulike(user,path):
 def download_cite_u_like_user_data():
     list_of_users = []
     letters = ['a','b']
-    for i in range(1,11):
+    for i in range(1,16):
         for let in letters:
             user = 'anonyuser'+str(i)+let
             list_of_users.append(user)
@@ -42,3 +45,4 @@ def download_cite_u_like_user_data():
 #            print "have file",user_json_filepath,"already"
 #        user_object = json.load(open(user_json_filepath))
 #        citulike_user_object_to_stats(user_object)
+download_cite_u_like_user_data()
