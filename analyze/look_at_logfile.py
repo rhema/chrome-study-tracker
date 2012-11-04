@@ -36,14 +36,33 @@ import download_and_save_users
 csv_output_file = "file.csv"
 csv_header = []
 collection_metrics = ['user','dataset','method','collected','experiment_order']
-metrics = ['total_time','pdf_time','paper_page_time','start_page_time','transitional_page_time']
+metrics = ['total_time','pdf_time','paper_page_time','start_page_time','collecting_time','transitional_page_time']
 csv_header = collection_metrics+metrics
+
+
+
+test_pages = ['http://dl.acm.org/citation.cfm?id=1118704','ICE.html']#two states here....
+ends = ['docs.google.com', 'chrome-extension','chrome://chrome/settings/']
+posting_partials = [ 'http://www.citeulike.org/posturl','http://www.citeulike.org/post_popup_success','http://www.citeulike.org/post_succes','show_msg=already_posted','http://www.citeulike.org/post_unknown.adp','http://www.citeulike.org/post_error']
+transitions_and_indexes = [ 'http://dl.acm.org/author_page.cfm','http://dl.acm.org/ccs.cfm', "http://citeseerx.ist.psu.edu/showciting",'http://dl.acm.org/results.cfm?query','http://pubget.com/search?q=doi' ]
+###http://www.citeulike.org/search/all
+###http://www.deepdyve.com/lp ? don't know... http://www.deepdyve.com/lp/acm/building-bridges-for-web-query-classification-GMSTxmJSKe?key=citeulike
+
 
 paper_regexes = [re.compile("http://portal.acm.org/citation.cfm.*"),
                  re.compile("http://dl.acm.org/citation.cfm.*"),
                  re.compile("http://citeseerx.ist.psu.edu/viewdoc/summary.*"),
+                 re.compile("http://citeseerx.ist.psu.edu/viewdoc/similar.*"),
+                 re.compile("http://citeseerx.ist.psu.edu/viewdoc/versions.*"),
                  re.compile("http://ieeexplore.ieee.org/xpl/articleDetails.jsp.*"),
-                 re.compile("http://ieeexplore.ieee.org:80/xpl/articleDetails.jsp.*")]
+                 re.compile("http://ieeexplore.ieee.org/stamp/stamp.jsp.*"),
+                 re.compile("http://ieeexplore.ieee.org:80/xpl/articleDetails.jsp.*"),
+                 re.compile("http://www.citeulike.org/user/.*/article/.*"),
+                 re.compile("http://www.sciencedirect.com/science/article.*"),
+                 re.compile("http://www.nowpublishers.com/product.aspx?product.*"),
+                 re.compile("http://www.nowpublishers.com/product.*"),
+                 ]
+
 
 #input_file = open("browser-log.txt")
 input_file = open("aggregatelog.txt")
@@ -65,8 +84,6 @@ analysis_datas = ['start','end','duration_minutes']
 start_web = ['user/anonyuser1a','user/anonyuser1b']
 start_ice= ['set1.html','set2.html']
 start_any = start_web + start_ice
-test_pages = ['http://dl.acm.org/citation.cfm?id=1118704','ICE.html']#two states here....
-ends = ['docs.google.com', 'chrome-extension','chrome://chrome/settings/']
 
 #set1  anonyuser1a
 
@@ -536,13 +553,25 @@ def is_start_page(url):
             return True
     return False
 
+def is_collecting(url):
+    for partial in posting_partials:
+        if partial in url:
+            return True
+    return False
+
+def is_transition(url):
+    for partial in transitions_and_indexes:
+        if partial in url:
+            return True
+    return False
+
 def total_tab_event_time(tab_events):
     total = 0.0
     for event in tab_events:
             total += event['item']['duration_seconds']
     return total/60.0
 
-def compute_tab_stats():#metrics = ['total_time','pdf_time','paper_page_time', 'start_page','transitional_page_time']
+def compute_tab_stats():#metrics = ['total_time','pdf_time','paper_page_time', 'start_page', 'collecting_time','transitional_page_time']
     for user in users_in_order:
         print "---stats for user---",user
         by_user[user]['total_time'] = by_user[user]['duration_minutes']
@@ -556,9 +585,15 @@ def compute_tab_stats():#metrics = ['total_time','pdf_time','paper_page_time', '
         start_page_tab_events = [x for x in tab_events if  is_start_page(x['item']['url']) ]
         by_user[user]['start_page_time'] =  total_tab_event_time(start_page_tab_events)
         
+        collecting_tab_events = [x for x in tab_events if  is_collecting(x['item']['url']) ]
+        by_user[user]['collecting_time'] =  total_tab_event_time(collecting_tab_events)
+        
+        transitional_tab_events = [x for x in tab_events if  is_transition(x['item']['url']) ]
+        by_user[user]['transitional_page_time'] =  total_tab_event_time(transitional_tab_events)
+        
         for event in tab_events:
             inlcuded = False
-            for f in [is_pdf,is_url_paper,is_start_page]:
+            for f in [is_pdf,is_url_paper,is_start_page,is_collecting,is_transition]:
                 if f(event['item']['url']):
                     inlcuded = True
                     break
