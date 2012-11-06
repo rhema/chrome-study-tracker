@@ -1,11 +1,31 @@
-#longest with anonyuser10b
+###between... done, no change.  ##pairwise comparisons first
+#distance of what is collected .  Done
 
-###between
+#clean data by hand only.... throw out and justify... test for reasonable ness
+#aov using method and dataset for each metric using R automagically.
+
+
+# is data normalized????.. don't care until significance found, but showing distributions is good in general... maybe coor the points/graphs and juxtapose?
+# vareity based on keywords....  ?? classifications, but probably not     ... distance as a metric for variety   
+# variety of impressions, and collected
+
+#  
+#  
+#  
+
+
+
+
+
+
 ##unique
 ###dept of collected documents
 #Keywords....
 ######
 ###
+
+
+#longest with anonyuser10b
 
 #metrics we might want to look at:
 #fluency on impression / collection
@@ -77,7 +97,7 @@ paper_regexes = [re.compile("http://portal.acm.org/citation.cfm.*"),
 
 #input_file = open("browser-log.txt")
 #input_file = open("aggregatelog.txt")
-input_file = open("all_together.json")
+input_file = open("aggregatelog_hand_clean.json")
 #input_file = open("aggregatelog7a.txt")
 #input_file = open("nony10.txt")
 input_lines = input_file.readlines()
@@ -253,7 +273,7 @@ def save_by_user_metrics(filename):
     csvfile = open(filename,'wb')
     csv_out = csv.writer(csvfile)
     csv_out.writerow(csv_header)
-    for user in any_user:
+    for user in users_in_order:##any_user:
         out_row = []
         for col in csv_header:
             if col in by_user[user]:
@@ -658,8 +678,10 @@ def total_tab_event_time(tab_events):
 def compute_tab_stats():#metrics = ['total_time','pdf_time','paper_page_time', 'start_page', 'collecting_time','transitional_page_time']
     for user in users_in_order:
         print "---stats for user---",user
-        by_user[user]['total_time'] = by_user[user]['duration_minutes']
+        
         tab_events = by_user[user]['tab_focus_event']
+        by_user[user]['total_time'] = total_tab_event_time(tab_events) ##"NOPE"###by_user[user]['duration_minutes']
+        
         pdf_tab_events = [x for x in tab_events if is_pdf( x['item']['url']) ]#(".pdf" in x['item']['url']) ]
         by_user[user]['pdf_time'] = total_tab_event_time(pdf_tab_events)
 
@@ -698,7 +720,7 @@ def add_depth():
 #init_by_user()
 #
 parse_logs()
-clean_logs_by_duration()
+#clean_logs_by_duration()
 init_metrics_by_user()
 save_dend()
 compute_collection_metrics()
