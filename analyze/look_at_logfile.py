@@ -1,5 +1,12 @@
 #longest with anonyuser10b
 
+###between
+##unique
+###dept of collected documents
+#Keywords....
+######
+###
+
 #metrics we might want to look at:
 #fluency on impression / collection
 #percentage of PDF views
@@ -37,8 +44,8 @@ import download_and_save_users
 
 csv_output_file = "file.csv"
 csv_header = []
-collection_metrics = ['user','dataset','method','collected','experiment_order']
-metrics = ['total_time','pdf_time','paper_page_time','start_page_time','collecting_time','transitional_page_time','depth_mean','depth_max','page_impression']
+collection_metrics = ['subject','dataset','method','collected','experiment_order']
+metrics = ['total_time','pdf_time','paper_page_time','start_page_time','collecting_time','transitional_page_time','depth_mean','depth_max', 'collected_depth','page_impression']
 #longnesses...
 
 csv_header = collection_metrics+metrics
@@ -82,7 +89,7 @@ by_user = {}#each user has three kinds of lists...
 log_events = ['page_load_crumb','tab_focus_event', 'page_load_raw','incontext_expand_crumb']
 analysis_datas = ['start','end','duration_minutes']
 #throw_out_partials = ['http://achilles.cse.tamu.edu/study/webbrowser.mov','docs.google.com','http://achilles.cse.tamu.edu/study/ice.mov','http://achilles.cse.tamu.edu/study/intro.mov','http://achilles.cse.tamu.edu/study/webbrowser.mov','chrome-extension']
-
+paper_title_to_depth = {}
 
 
 #throw_out_partials = ['anonyuser1a','anonyuser1b','set1.html','set2.html']
@@ -210,7 +217,7 @@ def compute_collection_metrics():
     for user in any_user:
         print "Computing collected for...",user
         stat = download_and_save_users.citulike_user_object_to_stats(json.load(open('citeulike_collection/users/'+user+'.json')))
-        out_row = [user]#[user[:-1]]
+        out_row = [user[:-1]]#[user]#[user[:-1]]
         for set in ['rank','log','web','ice']:
             if any_user[user][set]:
                 out_row.append(set)
@@ -220,6 +227,25 @@ def compute_collection_metrics():
         print "out row",out_row
         for i in range(len(collection_metrics)):
             by_user[user][collection_metrics[i]] = out_row[i]
+        collected_depths = []
+        for paper in stat['papers']:
+            print paper['title']#gbgbgbgbgb
+            if paper['title'] in paper_title_to_depth:
+                print paper_title_to_depth[paper['title']]
+                collected_depths += [paper_title_to_depth[paper['title']]]
+            else:
+                title = "nonenone"
+                if ":" in paper['title']:
+                    title = paper['title'].split(":")[0]
+                if title in paper_title_to_depth:
+                    print paper_title_to_depth[title] 
+                    collected_depths += [paper_title_to_depth[title]]
+                else:
+                    print "???"
+        if len(collected_depths) > 0:
+            by_user[user]['collected_depth'] = numpy.mean( collected_depths )
+        else:
+            by_user[user]['collected_depth'] = 0
 #        print by_user
 
 def save_by_user_metrics(filename):
@@ -513,6 +539,9 @@ def get_dend(user,event_type):
         if not "depths" in by_user[user]:
             by_user[user]['depths'] = []
         by_user[user]['depths'] += [longness]
+        paper_title_to_depth[event['item']['source']['title']] = longness
+        if ":" in event['item']['source']['title']:
+            paper_title_to_depth[event['item']['source']['title'].split(":")[0]] = longness
         if longness > 15:
             print event
         
@@ -671,11 +700,12 @@ def add_depth():
 parse_logs()
 clean_logs_by_duration()
 init_metrics_by_user()
+save_dend()
 compute_collection_metrics()
 compute_tab_stats()
-save_dend()
 add_depth()
 save_by_user_metrics("first.csv")
+print paper_title_to_depth
 #print_simple_stats()
 #generate_collected_csv()
 

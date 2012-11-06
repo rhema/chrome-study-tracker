@@ -11,9 +11,14 @@ def citulike_user_object_to_stats(cite_u):
 #    print str(len(cite_u['citeulike_user']['collected_papers']['citeulike_paper']))
 #    print cite_u['citeulike_user']['name']
     number_collected = 0
+    papers = []
     if "collected_papers" in cite_u['citeulike_user']:
+        print "GET TITLE--->",cite_u['citeulike_user']['collected_papers']['citeulike_paper']
+#        for paper in cite_u['citeulike_user']['collected_papers']['citeulike_paper']:
+#            print "Dat title",paper['title']
         number_collected = len(cite_u['citeulike_user']['collected_papers']['citeulike_paper'])
-    return {'name': cite_u['citeulike_user']['name'], 'collected':number_collected}
+        papers = cite_u['citeulike_user']['collected_papers']['citeulike_paper']
+    return {'name': cite_u['citeulike_user']['name'], 'collected':number_collected, 'papers':papers}
 
 def download_citeulike(user,path):
     outfile = open(path,"w")
