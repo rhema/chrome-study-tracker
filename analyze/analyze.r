@@ -3,7 +3,7 @@
 
 setwd("/Users/administrator/code/js/chrome-study-tracker/analyze")
 study_data<-read.csv('first.csv',header=TRUE)
-metrics<-cbind('collected','total_time','pdf_time','paper_page_time','start_page_time','collecting_time','transitional_page_time','depth_mean','depth_max', 'collected_depth','page_impression')
+metrics<-cbind('collected','total_time','pdf_time','paper_page_time','start_page_time','collecting_time','transitional_page_time','depth_mean','depth_max', 'collected_depth','page_impression','collection_novelty')
 
 between_subjects_tests <- function()
 {
@@ -49,3 +49,4 @@ within_subjects_tests <- function()
 #'collected_depth',         2.2479 1.9810  (p .4393)
 #'page_impression'          37.57 34.64
 ####################
+##tested separating grad from non grad students, found no difference

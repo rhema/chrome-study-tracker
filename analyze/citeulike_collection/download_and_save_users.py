@@ -13,7 +13,7 @@ def citulike_user_object_to_stats(cite_u):
     number_collected = 0
     papers = []
     if "collected_papers" in cite_u['citeulike_user']:
-        print "GET TITLE--->",cite_u['citeulike_user']['collected_papers']['citeulike_paper']
+#        print "GET TITLE--->",cite_u['citeulike_user']['collected_papers']['citeulike_paper']
 #        for paper in cite_u['citeulike_user']['collected_papers']['citeulike_paper']:
 #            print "Dat title",paper['title']
         number_collected = len(cite_u['citeulike_user']['collected_papers']['citeulike_paper'])
@@ -46,8 +46,9 @@ def download_cite_u_like_user_data():
         if not os.path.exists(user_json_filepath):
 #            print "downloading for",user,"to",user_json_filepath
             download_citeulike(user,user_json_filepath)
-#        else:
-#            print "have file",user_json_filepath,"already"
+        else:
+            print "have file",user_json_filepath,"already"
+            print "Trying for the next download..."
 #        user_object = json.load(open(user_json_filepath))
 #        citulike_user_object_to_stats(user_object)
 download_cite_u_like_user_data()

@@ -1,55 +1,19 @@
 ###between... done, no change.  ##pairwise comparisons first
 #distance of what is collected .  Done
+#clean data by hand only.... throw out and justify... test for reasonable ness  DONE
+#aov using method and dataset for each metric using R automagically.  DONE
 
-#clean data by hand only.... throw out and justify... test for reasonable ness
-#aov using method and dataset for each metric using R automagically.
+# variety of impressions, and collected documents by url with no get params
+# vareity based on keywords....  ?? classifications, but probably not     ... distance as a metric for variety
+
+
 
 
 # is data normalized????.. don't care until significance found, but showing distributions is good in general... maybe coor the points/graphs and juxtapose?
-# vareity based on keywords....  ?? classifications, but probably not     ... distance as a metric for variety   
-# variety of impressions, and collected
-
 #  
-#  
-#  
-
-
-
-
-
-
-##unique
-###dept of collected documents
-#Keywords....
-######
-###
-
-
-#longest with anonyuser10b
-
-#metrics we might want to look at:
-#fluency on impression / collection
-#percentage of PDF views
-
-#time spent on each page
-#about visualizing the citation chaining graph and calculating width / depth, we don't have to do it now, but I still would like to recommend graphviz as a tool for easily creating graph visualizations.
-
-###very easy
-#total page views
-#total number of expands
-#total viewing time...
-
-#if you expanded it, they looked at it
-#
 
 ''' '''
-
-#the road they took.   how much time...
-#what you have to do to figure out depth
-#the path they could take VS the path they did take
-#measuring the citation chaining...s
-
-#now that I have a couple the duration times, I need to add a couple of passes....
+#the road they took.   how much time...  measured with R, but lost on means and no difference measured
 
 import json
 import csv
@@ -66,12 +30,11 @@ csv_output_file = "file.csv"
 csv_header = []
 collection_metrics = ['subject','dataset','method','collected','experiment_order']
 metrics = ['total_time','pdf_time','paper_page_time','start_page_time','collecting_time','transitional_page_time','depth_mean','depth_max', 'collected_depth','page_impression']
+nov_metrics = ['collection_novelty']
+
 #longnesses...
 
-csv_header = collection_metrics+metrics
-
-
-
+csv_header = collection_metrics+metrics+nov_metrics
 test_pages = ['http://dl.acm.org/citation.cfm?id=1118704','ICE.html']#two states here....
 ends = ['docs.google.com', 'chrome-extension','chrome://chrome/settings/']
 posting_partials = [ 'http://www.citeulike.org/posturl','http://www.citeulike.org/post_popup_success','http://www.citeulike.org/post_succes','show_msg=already_posted','http://www.citeulike.org/post_unknown.adp','http://www.citeulike.org/post_error']
@@ -93,7 +56,6 @@ paper_regexes = [re.compile("http://portal.acm.org/citation.cfm.*"),
                  re.compile("http://www.nowpublishers.com/product.aspx?product.*"),
                  re.compile("http://www.nowpublishers.com/product.*"),
                  ]
-
 
 #input_file = open("browser-log.txt")
 #input_file = open("aggregatelog.txt")
@@ -714,6 +676,45 @@ def add_depth():
             by_user[user]['depth_max'] = numpy.max(by_user[user]['depths'])
             by_user[user]['page_impression'] = len(by_user[user]['depths'])
             print numpy.median(by_user[user]['depths']), numpy.mean(by_user[user]['depths']),by_user[user]['depths']
+
+
+def add_collection_novelty():#based on title
+    all_paper_titles = {}#average novelty is 
+    for user in any_user:
+        print user
+        stat = download_and_save_users.citulike_user_object_to_stats(json.load(open('citeulike_collection/users/'+user+'.json')))
+        for paper in stat['papers']:
+            title = paper['title'],paper
+#            if not title in all_paper_titles:
+#                all_paper_titles[title] = 1
+#            else:
+#                all_paper_titles[title] += 1
+
+
+def add_collection_novelty():#based on title
+    all_paper_titles = {}#average novelty is 
+    for user in any_user:
+        print user
+        stat = download_and_save_users.citulike_user_object_to_stats(json.load(open('citeulike_collection/users/'+user+'.json')))
+        for paper in stat['papers']:
+            title = paper['title']
+            if not title in all_paper_titles:
+                all_paper_titles[title] = 1
+            else:
+                all_paper_titles[title] += 1
+    for user in any_user:
+        print user
+        stat = download_and_save_users.citulike_user_object_to_stats(json.load(open('citeulike_collection/users/'+user+'.json')))
+        paper_novelties = []
+        for paper in stat['papers']:
+            title = paper['title']
+            paper_novelties += [1.0/ float(all_paper_titles[paper['title']])]
+        nov = 0;
+        if len(paper_novelties) > 0:
+            nov = numpy.mean(paper_novelties)
+        by_user[user]['collection_novelty'] = nov
+        print nov,paper_novelties
+            
 #print by_user
 #print "longest",total_extension_max
 
@@ -726,6 +727,7 @@ save_dend()
 compute_collection_metrics()
 compute_tab_stats()
 add_depth()
+add_collection_novelty()
 save_by_user_metrics("first.csv")
 print paper_title_to_depth
 #print_simple_stats()
