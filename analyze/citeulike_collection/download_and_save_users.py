@@ -20,15 +20,46 @@ def citulike_user_object_to_stats(cite_u):
         papers = cite_u['citeulike_user']['collected_papers']['citeulike_paper']
     return {'name': cite_u['citeulike_user']['name'], 'collected':number_collected, 'papers':papers}
 
-def download_citeulike(user,path):
+def citulike_article_to_stats(cite_u):
+#    print "STERT COLLECTER",cite_u['citeulike_paper']
+    if 'additional_locations' in cite_u['citeulike_paper']:
+        al = cite_u['citeulike_paper']['additional_locations']['location']
+#        print len(al)
+        if len(al) > 0:
+#            print al
+            print "Right paper???",al[0]
+
+def download_metadata(location,path):
     outfile = open(path,"w")
-    get_url = service_path_prepend_me+citeulike_path_prepend_me+user
+    get_url = service_path_prepend_me+location
     print "starting to download...",get_url
     response = urllib2.urlopen(get_url)
     downloaded_json = response.read()
     print "Here you go!!!",downloaded_json
     outfile.write(downloaded_json)
     outfile.close()
+
+
+def article_url_to_filename(url):
+    return "_".join(url.split("/")[-3:])+".json"
+
+def article_filename_to_url(filename):
+    return 'http://www.citeulike.org/user/'+("/".join(filename.split(".")[0].split("_")))
+
+def download_metadata_article(user):
+    collection = citulike_user_object_to_stats(json.load(open('users/'+user+'.json')))
+#    print "Blah...",collection
+    for paper in collection['papers']:
+        article_url = paper['location']
+        fpath = 'users/'+article_url_to_filename(article_url)
+#        print "checking for",fpath
+        if not os.path.exists(fpath):
+            print "Downloading",article_url
+            download_metadata(article_url,fpath)
+        else:
+#            print "have it!!!",fpath
+            article = json.load(open(fpath))
+            citulike_article_to_stats(article)
 
 def download_cite_u_like_user_data():
     list_of_users = []
@@ -45,10 +76,11 @@ def download_cite_u_like_user_data():
         user_json_filepath = rel_save_directory+"/"+user+".json"
         if not os.path.exists(user_json_filepath):
 #            print "downloading for",user,"to",user_json_filepath
-            download_citeulike(user,user_json_filepath)
+            download_metadata(citeulike_path_prepend_me+user,user_json_filepath)
         else:
-            print "have file",user_json_filepath,"already"
-            print "Trying for the next download..."
+#            print "have file",download_metadata_article,"already"
+#            print "Trying for the next download..."
+            download_metadata_article(user)
 #        user_object = json.load(open(user_json_filepath))
 #        citulike_user_object_to_stats(user_object)
 download_cite_u_like_user_data()
