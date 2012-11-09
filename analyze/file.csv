@@ -1,1 +1,1 @@
-user,dataset,method,collected,experiment_order,total_time,pdf_time,paper_page_time,start_page_time,collecting_time,transitional_page_time,depth_mean,depth_max,page_impression
+subject,dataset,method,collected,experiment_order,total_time,pdf_time,paper_page_time,start_page_time,collecting_time,transitional_page_time,depth_mean,depth_max,collected_depth,page_impression
