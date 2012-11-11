@@ -29,11 +29,11 @@ def download_all_papers():
         if not os.path.exists(paper_json_filepath):
 #            if p in uh_ohs:
 #                print p,"Marked as uh oh.  WIll skip"
-            print "wget -O",paper_json_filepath,service_path_prepend_me+p
-#            try:
-#            download_metadata(p,paper_json_filepath)
-#            except:
-#                print "Failure to download the metadata"
+#            print "wget -O",paper_json_filepath,service_path_prepend_me+p
+            try:
+                download_metadata(p,paper_json_filepath)
+            except:
+                print "Failure to download the metadata"
         else:
             ##print "have file",download_metadata_article,"already"
             try:
@@ -73,7 +73,7 @@ def download_metadata(location,path):
     outfile = open(path,"w")
     get_url = service_path_prepend_me+location
     print "starting to download...",get_url
-    response = urllib2.urlopen(get_url)
+    response = urllib2.urlopen(get_url,timeout=1)
     downloaded_json = response.read()
     print "Here you go!!!",downloaded_json
     outfile.write(downloaded_json)
