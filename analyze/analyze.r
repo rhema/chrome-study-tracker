@@ -3,7 +3,7 @@
 
 setwd("/Users/administrator/code/js/chrome-study-tracker/analyze")
 study_data<-read.csv('first.csv',header=TRUE)
-metrics<-cbind('collected','total_time','pdf_time','paper_page_time','start_page_time','collecting_time','transitional_page_time','depth_mean','depth_max', 'collected_depth','page_impression','collection_novelty')
+metrics<-cbind('collected','total_time','pdf_time','paper_page_time','start_page_time','collecting_time','transitional_page_time','depth_mean','depth_max', 'collected_depth','page_impression','keyword_variety','collection_novelty')
 
 between_subjects_tests <- function()
 {

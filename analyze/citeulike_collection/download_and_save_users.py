@@ -2,6 +2,7 @@ import urllib2
 import os
 import json
 
+relative_path = "citeulike_collection/users/"
 rel_save_directory = "users"
 citeulike_path_prepend_me = "http://www.citeulike.org/user/"
 service_path_prepend_me = "http://ecology-service.cs.tamu.edu/ecologylabSemanticService/metadata.json?url="
@@ -45,7 +46,7 @@ def download_all_papers():
 #            download_metadata_article(user)
             
 
-def citulike_user_object_to_stats(cite_u):
+def citulike_user_object_to_stats(cite_u,relative_path=relative_path):
 #    print json.dumps(cite_u,indent=2)
 #    print str(len(cite_u['citeulike_user']['collected_papers']['citeulike_paper']))
 #    print cite_u['citeulike_user']['name']
@@ -57,6 +58,40 @@ def citulike_user_object_to_stats(cite_u):
 #            print "Dat title",paper['title']
         number_collected = len(cite_u['citeulike_user']['collected_papers']['citeulike_paper'])
         papers = cite_u['citeulike_user']['collected_papers']['citeulike_paper']
+    for paper in papers:
+        ##print "try to find keywords for",paper
+        paper_place = article_url_to_filename(paper['location'])
+        ##print paper_place
+        article = json.load(open(relative_path+paper_place))
+        if not 'additional_locations' in article['citeulike_paper']:
+            continue
+        real_article = article['citeulike_paper']['additional_locations']['location'][0]
+        ##print "real article location.........",real_article
+        final_place = url_to_fname(real_article)
+        final = None
+        try:
+            final = json.load(open(relative_path+final_place+".json"))
+        except:
+            print "Waring",final_place,"file not found"
+            continue
+        #tags = get_tags_if_portal()
+        keywords = []
+        if "acm_portal" in final:
+#            print "ACM"
+            acm = final['acm_portal']
+            if "keywords" in  acm:
+#                print "KEYWORDS",acm['keywords']
+                for keyword in acm['keywords']['document']:
+                    #print "kw it",keyword
+                    keywords += [keyword['title']]
+        else:
+            print "not acm is",final.keys()[0],cite_u
+            print "()"*20
+            print json.dumps(final,indent=1)
+            print "()"*20
+        paper['keywords'] = keywords
+        #print json.dumps(final,indent=4)
+        
     return {'name': cite_u['citeulike_user']['name'], 'collected':number_collected, 'papers':papers}
 
 def citulike_article_to_stats(cite_u):
@@ -72,10 +107,10 @@ def citulike_article_to_stats(cite_u):
 def download_metadata(location,path):
     outfile = open(path,"w")
     get_url = service_path_prepend_me+location
-    print "starting to download...",get_url
+    #print "starting to download...",get_url
     response = urllib2.urlopen(get_url,timeout=1)
     downloaded_json = response.read()
-    print "Here you go!!!",downloaded_json
+    #print "Here you go!!!",downloaded_json
     outfile.write(downloaded_json)
     outfile.close()
 
@@ -123,7 +158,11 @@ def download_cite_u_like_user_data():
             download_metadata_article(user)
 #        user_object = json.load(open(user_json_filepath))
 #        citulike_user_object_to_stats(user_object)
-download_cite_u_like_user_data()
+#download_cite_u_like_user_data()
 
 #count_dl_papers()
-download_all_papers()
+#download_all_papers()
+#stat = citulike_user_object_to_stats(json.load(open('users/anonyuser4a.json')),"users/")
+
+stat = citulike_user_object_to_stats(json.load(open('users/anonyuser6a.json')),"users/")
+print json.dumps(stat,indent=2)

@@ -30,7 +30,7 @@ csv_output_file = "file.csv"
 csv_header = []
 collection_metrics = ['subject','dataset','method','collected','experiment_order']
 metrics = ['total_time','pdf_time','paper_page_time','start_page_time','collecting_time','transitional_page_time','depth_mean','depth_max', 'collected_depth','page_impression']
-nov_metrics = ['collection_novelty']
+nov_metrics = ['keyword_variety','collection_novelty']
 
 #longnesses...
 
@@ -206,6 +206,13 @@ def compute_collection_metrics():
         out_row.append(stat['collected'])
         out_row.append(user[len(user)-1])
         #out_row.append()
+        keywords = {}
+        for paper in stat['papers']:
+            if "keywords" in paper:
+                print "paper keywords",paper['keywords']
+                for keyword in paper['keywords']:
+                    keywords[keyword] = 1
+        by_user[user]['keyword_variety'] = len(keywords.keys())
         print "out row",out_row
         for i in range(len(collection_metrics)):
             by_user[user][collection_metrics[i]] = out_row[i]
@@ -728,7 +735,7 @@ compute_collection_metrics()
 compute_tab_stats()
 add_depth()
 add_collection_novelty()
-save_by_user_metrics("first.csv")
+save_by_user_metrics("second.csv")
 print paper_title_to_depth
 #print_simple_stats()
 #generate_collected_csv()
