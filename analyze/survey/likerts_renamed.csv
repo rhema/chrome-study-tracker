@@ -1,0 +1,14 @@
+Name,Gender,year,experence,papers_total,sources,papers_frequency,interesting,overview,overall,citations
+1,Male,Senior,None,1/4/2012,"acm digital library, wikipedia, EndNote",only for class,3,6,3,1
+2,Male,Senior,None,1/4/2012,"acm digital library, ieee, wikipedia",only for class,5,7,3,3
+3,Male,Senior,Experienced,more than 25,"acm digital library, citeseerx, ieee, sciencedirect, wikipedia",regularly,6,3,4,3
+4,Female,Senior,Some,more than 25,"acm digital library, citeseerx, ieee, wikipedia",only for class,3,2,6,2
+5,Male,Senior,Experienced,11/25/2012,"acm digital library, ieee, wikipedia",regularly,4,3,4,2
+6,Male,Senior,None,1/4/2012,wikipedia,only for class,7,3,6,4
+7,Male,Senior,Little,5/10/2012,"acm digital library, wikipedia",only for class,2,3,2,1
+8,Male,Senior,Some,more than 25,"acm digital library, ieee, wikipedia",only for class,6,5,6,4
+10,Male,Senior,Experienced,more than 25,"acm digital library, citeseerx, ieee, sciencedirect, wikipedia, citeulike",regularly,3,2,4,2
+11,Male,Graduate Student,Some,more than 25,"ieee, wikipedia",only for class,2,3,1,3
+12,Male,Graduate Student,Some,11/25/2012,"acm digital library, ieee, wikipedia",only for class,3,3,4,3
+13,Male,Graduate Student,Experienced,more than 25,"acm digital library, ieee, wikipedia",regularly,1,1,1,1
+14,Male,Graduate Student,Some,more than 25,"acm digital library, citeseerx, wikipedia",regularly,1,1,2,1
