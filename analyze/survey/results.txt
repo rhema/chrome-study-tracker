@@ -1,0 +1,53 @@
+
+
+[1] "interesting"
+
+	One Sample t-test
+
+data:  likert_data[metrics[i]] - 5 
+t = -2.7143, df = 12, p-value = 0.01881
+alternative hypothesis: true mean is not equal to 0 
+95 percent confidence interval:
+ -2.6347454 -0.2883316 
+sample estimates:
+mean of x 
+-1.461538 
+
+[1] "overview"
+
+	One Sample t-test
+
+data:  likert_data[metrics[i]] - 5 
+t = -3.5703, df = 12, p-value = 0.00385
+alternative hypothesis: true mean is not equal to 0 
+95 percent confidence interval:
+ -2.848925 -0.689537 
+sample estimates:
+mean of x 
+-1.769231 
+
+[1] "overall"
+
+	One Sample t-test
+
+data:  likert_data[metrics[i]] - 5 
+t = -2.9917, df = 12, p-value = 0.01124
+alternative hypothesis: true mean is not equal to 0 
+95 percent confidence interval:
+ -2.5259477 -0.3971292 
+sample estimates:
+mean of x 
+-1.461538 
+
+[1] "citations"
+
+	One Sample t-test
+
+data:  likert_data[metrics[i]] - 5 
+t = -8.75, df = 12, p-value = 1.485e-06
+alternative hypothesis: true mean is not equal to 0 
+95 percent confidence interval:
+ -3.362712 -2.021904 
+sample estimates:
+mean of x 
+-2.692308 
