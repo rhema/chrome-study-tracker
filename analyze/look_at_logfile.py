@@ -59,7 +59,7 @@ paper_regexes = [re.compile("http://portal.acm.org/citation.cfm.*"),
 
 #input_file = open("browser-log.txt")
 #input_file = open("aggregatelog.txt")
-input_file = open("aggregatelog_hand_clean.json")
+input_file = open("aggregatelog_hand_clean_no_nine.json")
 #input_file = open("aggregatelog7a.txt")
 #input_file = open("nony10.txt")
 input_lines = input_file.readlines()
